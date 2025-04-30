@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pablords.command.domain.Product;
-import com.pablords.command.domain.StockUpdatedEvent;
+import com.pablords.shared.events.StockUpdatedEvent;
 import com.pablords.command.repository.ProductRepository;
 
 import org.springframework.kafka.core.KafkaTemplate;
+
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +36,14 @@ public class ProductCommandService {
 
     // Publica o evento no Kafka
     kafkaTemplate.send("stock-updated",
-        new StockUpdatedEvent(saved.getId(), saved.getQuantity(), saved.getName()));
+        new StockUpdatedEvent(saved.getId().toString(), saved.getQuantity(), saved.getName()));
 
     return saved;
   }
 
   @Transactional
-  public Product addStock(String productId, int amount) {
+  public Product addStock(UUID productId, int amount) {
+    log.info("Adding stock to product: {}", productId);
     try {
       Product product = repository.findById(productId)
           .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -50,7 +53,7 @@ public class ProductCommandService {
       log.info("Product updated: {}", updated.getId());
       // Publica o evento no Kafka
       kafkaTemplate.send("stock-updated",
-          new StockUpdatedEvent(updated.getId(), updated.getQuantity(), updated.getName()));
+          new StockUpdatedEvent(updated.getId().toString(), updated.getQuantity(), updated.getName()));
       return updated;
 
     } catch (ObjectOptimisticLockingFailureException ex) {
@@ -61,7 +64,7 @@ public class ProductCommandService {
   }
 
   @Transactional
-  public Product removeStock(String productId, int amount) {
+  public Product removeStock(UUID productId, int amount) {
     try {
       Product product = repository.findById(productId)
           .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -70,7 +73,7 @@ public class ProductCommandService {
       Product updated = repository.save(product);
       // Publica o evento no Kafka
       kafkaTemplate.send("stock-updated",
-          new StockUpdatedEvent(updated.getId(), updated.getQuantity(), updated.getName()));
+          new StockUpdatedEvent(updated.getId().toString(), updated.getQuantity(), updated.getName()));
       return updated;
 
     } catch (ObjectOptimisticLockingFailureException ex) {

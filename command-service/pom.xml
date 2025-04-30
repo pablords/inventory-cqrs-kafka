@@ -6,6 +6,7 @@
     <groupId>com.pablords</groupId>
     <artifactId>inventory_management</artifactId>
     <version>1.0.0</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>command-service</artifactId>
   <dependencies>
@@ -55,6 +56,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-devtools</artifactId>
       <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>com.pablords</groupId>
+      <artifactId>shared</artifactId>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
 </project>

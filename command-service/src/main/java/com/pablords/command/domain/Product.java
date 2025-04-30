@@ -10,8 +10,7 @@ import java.util.UUID;
 public class Product {
 
     @Id
-    private String id;
-
+    private UUID id;
     private String name;
     private Integer quantity;
 
@@ -24,7 +23,7 @@ public class Product {
     public Product() { }
 
     public Product(String name, int quantity) {
-        this.id = UUID.randomUUID().toString();
+        this.id = UUID.randomUUID();
         this.name = name;
         this.quantity = quantity;
         this.createdAt = LocalDateTime.now();
@@ -44,11 +43,11 @@ public class Product {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public String getId() {
+    public UUID getId() {
       return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
       this.id = id;
     }
 

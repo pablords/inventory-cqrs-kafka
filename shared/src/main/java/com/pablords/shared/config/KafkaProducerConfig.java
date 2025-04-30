@@ -1,4 +1,4 @@
-package com.pablords.command.config;
+package com.pablords.shared.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -9,7 +9,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
-import com.pablords.command.domain.StockUpdatedEvent;
+import com.pablords.shared.events.StockUpdatedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +23,7 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, true); // Inclui o cabeçalho __TypeId__
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 

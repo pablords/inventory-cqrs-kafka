@@ -1,5 +1,7 @@
 package com.pablords.command.controller;
 
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -29,12 +31,12 @@ public class ProductCommandController {
   @PostMapping("/{id}/add")
   public Product addStock(@PathVariable String id, @RequestParam int amount) {
     log.info("Added quantity: {}", amount);
-    return service.addStock(id, amount);
+    return service.addStock(UUID.fromString(id), amount);
   }
 
   @PostMapping("/{id}/remove")
   public Product removeStock(@PathVariable String id, @RequestParam int amount) {
     log.info("Remove quantity: {}", amount);
-    return service.removeStock(id, amount);
+    return service.removeStock(UUID.fromString(id), amount);
   }
 }

@@ -1,4 +1,4 @@
-package com.pablords.query.domain;
+package com.pablords.shared.events;
 
 public class StockUpdatedEvent {
     private String productId;

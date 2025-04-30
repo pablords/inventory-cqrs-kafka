@@ -2,7 +2,8 @@ package com.pablords.query.service;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import com.pablords.query.domain.StockUpdatedEvent;
+import com.pablords.shared.events.StockUpdatedEvent;
+
 
 import com.pablords.query.model.ProductView;
 import com.pablords.query.repository.ProductViewRepository;
