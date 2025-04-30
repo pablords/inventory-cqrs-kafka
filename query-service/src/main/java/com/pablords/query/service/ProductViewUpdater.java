@@ -22,7 +22,7 @@ public class ProductViewUpdater {
 
   @KafkaListener(topics = "stock-updated", groupId = "query-service", containerFactory = "kafkaListenerContainerFactory")
   public void onStockUpdated(StockUpdatedEvent event) {
-      log.info("Received stock updated event: {}", event.getProductId());
+      log.info("Received stock updated event id: {}, amount: {}", event.getProductId(), event.getNewQuantity());
       ProductView view = productViewRepository.findById(event.getProductId())
           .orElse(new ProductView(event.getProductId(), event.getName(), 0));
   
