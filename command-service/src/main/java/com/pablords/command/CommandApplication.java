@@ -1,0 +1,28 @@
+package com.pablords.command;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@SpringBootApplication(scanBasePackages = "com.pablords.command")
+public class CommandApplication implements CommandLineRunner {
+
+  private static final Logger log = LoggerFactory.getLogger(CommandApplication.class);
+
+  @Value("${spring.application.name}")
+  String appName;
+
+  @Override
+  public void run(String... args) {
+    log.info("{} app is running", appName);
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(CommandApplication.class, args);
+  }
+
+}
