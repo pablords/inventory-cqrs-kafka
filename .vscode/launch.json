@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Command Service",
+      "request": "launch",
+      "mainClass": "com.pablords.command.CommandApplication",
+      "projectName": "command-service",
+      "args": "--server.port=8080"
+    },
+    {
+      "type": "java",
+      "name": "Query Service",
+      "request": "launch",
+      "mainClass": "com.pablords.query.QueryApplication",
+      "projectName": "query-service",
+      "args": "--server.port=8081"
+    }
+  ]
+}
