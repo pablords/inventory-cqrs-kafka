@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: query-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/inventory
+
+logging:
+  level:
+    org:
+      hibernate: ERROR
+      apache.kafka: ERROR
+      springframework:
+        orm.jpa: ERROR
+        kafka: ERROR
+        transaction: TRACE
+        kafka.transaction: DEBUG
+
+server:
+  servlet:
+    context-path: /api/v1

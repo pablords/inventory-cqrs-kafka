@@ -36,7 +36,6 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./.docker/db/init:/docker-entrypoint-initdb.d
     command: >
       postgres -c wal_level=logical
               -c max_wal_senders=10
