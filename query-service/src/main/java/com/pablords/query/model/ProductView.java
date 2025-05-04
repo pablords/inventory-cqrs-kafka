@@ -10,13 +10,16 @@ public class ProductView {
     private String id;
     private String name;
     private int quantity;
+    private String topic;
+    private String log;
 
     public ProductView() { }
 
-    public ProductView(String id, String name, int quantity) {
+    public ProductView(String id, String name, int quantity, String topic) {
         this.id = id;
         this.name = name;
         this.quantity = quantity;
+        this.topic = topic;
     }
 
     // Getters and Setters
@@ -43,4 +46,19 @@ public class ProductView {
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
+
+    public String getTopic() {
+        return topic;
+    }
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public String getLog() {
+        return log;
+    }
+    public void setLog(String log) {
+        this.log = log;
+    }
+    
 }

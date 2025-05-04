@@ -27,7 +27,7 @@ services:
       - "9092:9092"
 
   db-command:
-    image: postgres:latest
+    image: debezium/postgres:15
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
@@ -37,6 +37,11 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./.docker/db/init:/docker-entrypoint-initdb.d
+    command: >
+      postgres -c wal_level=logical
+              -c max_wal_senders=10
+              -c max_replication_slots=10
+              -c max_connections=100
 
   db-query:
     image: mongo:latest
@@ -55,6 +60,32 @@ services:
     environment:
       KAFKA_BROKERCONNECT: kafka:29092
 
+  connect:
+    image: debezium/connect:2.6
+    networks:
+      - default
+    ports:
+      - 8083:8083
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect-configs
+      OFFSET_STORAGE_TOPIC: connect-offsets
+      STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: false
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: false
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_PLUGIN_PATH: /kafka/connect,/usr/share/java,/usr/share/confluent-hub-components
+      CONNECT_DATABASE_HISTORY_KAFKA_TOPIC: schema-changes.inventory
+      CONNECT_DATABASE_HISTORY_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - kafka
+      - db-command
+
+
 volumes:
   db_data:
     driver: local
@@ -62,3 +93,9 @@ volumes:
 networks:
   default:
     driver: bridge
+
+
+
+
+
+

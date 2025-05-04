@@ -63,5 +63,13 @@
       <artifactId>shared</artifactId>
       <version>1.0.0</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.hypersistence</groupId>
+      <artifactId>hypersistence-utils-hibernate-60</artifactId>
+      <version>3.9.0</version>
+  </dependency>
+
+    
   </dependencies>
 </project>
