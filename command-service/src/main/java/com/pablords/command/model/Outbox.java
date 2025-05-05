@@ -1,4 +1,4 @@
-package com.pablords.command.domain;
+package com.pablords.command.model;
 
 import java.time.Instant;
 import java.util.Map;
@@ -17,7 +17,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "outbox_event")
-public class OutboxEvent {
+public class Outbox {
 
   @Id
   private UUID id;

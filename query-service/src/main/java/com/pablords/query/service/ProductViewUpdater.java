@@ -27,7 +27,7 @@ public class ProductViewUpdater {
   }
 
   @Transactional
-  @KafkaListener(topics = "outbox.event.stock-updated", groupId = "query-service", containerFactory = "kafkaListenerContainerFactory", concurrency = "3")
+  @KafkaListener(topics = "${consumer.topic.name}", groupId = "${consumer.group-id}", containerFactory = "kafkaListenerContainerFactory", concurrency = "3")
   public void onStockUpdated(StockUpdatedEvent event, Acknowledgment acknowledgment) {
     log.info("Received stock updated event id: {}, amount: {}", event.getProductId(), event.getNewQuantity());
     try {
@@ -51,7 +51,7 @@ public class ProductViewUpdater {
     }
   }
 
-  @KafkaListener(topics = "outbox.event.stock-updated-dlq", groupId = "dlq-query-service", containerFactory = "kafkaListenerContainerFactory")
+  @KafkaListener(topics = "${consumer.topic.name}-dlq", groupId = "dlq-${consumer.group-id}", containerFactory = "kafkaListenerContainerFactory", concurrency = "3")
   public void processDLQMessage(StockUpdatedEvent event,
       Acknowledgment acknowledgment) {
     try {

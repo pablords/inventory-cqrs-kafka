@@ -3,8 +3,7 @@ package com.pablords.command.config;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.*;
@@ -69,9 +68,10 @@ public class DebeziumConnectorRegistrar {
     config.put("transforms.outbox.table.field.event.key", "aggregate_id");
     config.put("transforms.outbox.table.field.event.payload", "payload");
     config.put("transforms.outbox.route.by.field", "type"); // Certifique-se de que o nome do campo está correto
- 
+    config.put("transforms.outbox.route.topic.replacement", "outbox_event.${routedByValue}"); // Pega o valor do campo "type" e substitui na string do tópico
+
     // Adiciona o prefixo obrigatório para os tópicos
-    config.put("topic.prefix", ".");
+    config.put("topic.prefix", "inventory");
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("name", connectorName);

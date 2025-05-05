@@ -5,13 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pablords.command.domain.OutboxEvent;
-import com.pablords.command.domain.Product;
 import com.pablords.shared.events.StockUpdatedEvent;
 
 import lombok.extern.slf4j.Slf4j;
 
-import com.pablords.command.repository.OutboxEventRepository;
+import com.pablords.command.model.Outbox;
+import com.pablords.command.model.Product;
+import com.pablords.command.repository.OutboxRepository;
 import com.pablords.command.repository.ProductRepository;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,22 +21,21 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-
 @Service
 @Slf4j
-public class ProductCommandService {
-
+public class ProductService {
 
   private final ProductRepository productRepository;
-  private final OutboxEventRepository outboxEventRepository;
+  private final OutboxRepository outboxRepository;
   private final KafkaTemplate<String, StockUpdatedEvent> kafkaTemplate;
+  final ObjectMapper objectMapper = new ObjectMapper();
 
-  public ProductCommandService(ProductRepository productRepository,
+  public ProductService(ProductRepository productRepository,
       @Qualifier("stockUpdatedKafkaTemplate") KafkaTemplate<String, StockUpdatedEvent> kafkaTemplate,
-      OutboxEventRepository outboxEventRepository) {
+      OutboxRepository outboxRepository) {
     this.productRepository = productRepository;
     this.kafkaTemplate = kafkaTemplate;
-    this.outboxEventRepository = outboxEventRepository;
+    this.outboxRepository = outboxRepository;
   }
 
   @Transactional
@@ -44,12 +43,11 @@ public class ProductCommandService {
     try {
       Product product = new Product(name, initialQty);
       Product saved = productRepository.save(product);
-      ObjectMapper objectMapper = new ObjectMapper();
       Map<String, Object> payload = objectMapper.convertValue(
           new StockUpdatedEvent(saved.getId().toString(), saved.getQuantity(), saved.getName()),
           Map.class);
 
-      OutboxEvent event = new OutboxEvent();
+      Outbox event = new Outbox();
       event.setId(UUID.randomUUID());
       event.setAggregateType("Stock");
       event.setAggregateId(saved.getId().toString());
@@ -74,28 +72,31 @@ public class ProductCommandService {
 
       Product updated = productRepository.save(product);
       log.info("Product updated: {}", updated.getId());
+      this.saveOutbox(updated);
 
-      ObjectMapper objectMapper = new ObjectMapper();
-      Map<String, Object> payload = objectMapper.convertValue(
-          new StockUpdatedEvent(updated.getId().toString(), updated.getQuantity(), updated.getName()),
-          Map.class);
-
-      OutboxEvent event = new OutboxEvent();
-      event.setId(UUID.randomUUID());
-      event.setAggregateType("Stock");
-      event.setAggregateId(updated.getId().toString());
-      event.setType("stock-updated");
-      event.setPayload(payload);
-      event.setCreatedAt(Instant.now());
-      log.info("Outbox event created: {}", event.getId());
-
-      outboxEventRepository.save(event);
       return updated;
     } catch (ObjectOptimisticLockingFailureException ex) {
       // Este é o caso do Optimistic Lock falhar
       // Ex.: outro processo atualizou o registro primeiro.
       throw new RuntimeException("Concurrency conflict detected (optimistic lock)");
     }
+  }
+
+  private void saveOutbox(Product updatedProduct) {
+    log.info("Saving outbox event for product: {}", updatedProduct.getId());
+    Map<String, Object> payload = objectMapper.convertValue(
+        new StockUpdatedEvent(updatedProduct.getId().toString(), updatedProduct.getQuantity(),
+            updatedProduct.getName()),
+        Map.class);
+    Outbox event = new Outbox();
+    event.setId(UUID.randomUUID());
+    event.setAggregateType("Stock");
+    event.setAggregateId(updatedProduct.getId().toString());
+    event.setType("stock-updated");
+    event.setPayload(payload);
+    event.setCreatedAt(Instant.now());
+    outboxRepository.save(event);
+    log.info("Outbox event saved: {}", event.getId());
   }
 
   @Transactional
@@ -106,12 +107,11 @@ public class ProductCommandService {
       product.removeStock(amount);
       Product updated = productRepository.save(product);
 
-      ObjectMapper objectMapper = new ObjectMapper();
       Map<String, Object> payload = objectMapper.convertValue(
           new StockUpdatedEvent(updated.getId().toString(), updated.getQuantity(), updated.getName()),
           Map.class);
 
-      OutboxEvent event = new OutboxEvent();
+      Outbox event = new Outbox();
       event.setId(UUID.randomUUID());
       event.setAggregateType("Stock");
       event.setAggregateId(updated.getId().toString());
@@ -126,4 +126,5 @@ public class ProductCommandService {
       throw new RuntimeException("Concurrency conflict detected (optimistic lock)");
     }
   }
+
 }

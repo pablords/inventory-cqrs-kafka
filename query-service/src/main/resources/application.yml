@@ -6,6 +6,24 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/inventory
 
+consumer:
+  group-id: query-service
+  topic:
+    name: outbox_event.stock-updated
+
+  properties:
+    auto-offset-reset: earliest
+    enable-auto-commit: false
+    max-poll-records: 1
+
+  concurrency: 3
+
+  poll-timeout: 1000
+
+  seek-to-current-error-handler:
+    seek-after-rollback: true
+    max-failure-attempts: 3
+
 logging:
   level:
     org:

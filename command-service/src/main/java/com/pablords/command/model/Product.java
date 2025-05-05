@@ -1,4 +1,4 @@
-package com.pablords.command.domain;
+package com.pablords.command.model;
 
 import jakarta.persistence.*;
 

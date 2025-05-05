@@ -5,19 +5,19 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import com.pablords.command.domain.Product;
-import com.pablords.command.service.ProductCommandService;
+import com.pablords.command.model.Product;
+import com.pablords.command.service.ProductService;
 
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/products")
 @Slf4j
-public class ProductCommandController {
+public class ProductController {
 
-  private final ProductCommandService service;
+  private final ProductService service;
 
-  public ProductCommandController(ProductCommandService service) {
+  public ProductController(ProductService service) {
     this.service = service;
   }
 
