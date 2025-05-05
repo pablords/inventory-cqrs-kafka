@@ -43,18 +43,9 @@ public class ProductService {
     try {
       Product product = new Product(name, initialQty);
       Product saved = productRepository.save(product);
-      Map<String, Object> payload = objectMapper.convertValue(
-          new StockUpdatedEvent(saved.getId().toString(), saved.getQuantity(), saved.getName()),
-          Map.class);
 
-      Outbox event = new Outbox();
-      event.setId(UUID.randomUUID());
-      event.setAggregateType("Stock");
-      event.setAggregateId(saved.getId().toString());
-      event.setType("stock-updated");
-      event.setPayload(payload);
-      event.setCreatedAt(Instant.now());
-      log.info("Outbox event created: {}", event.getId());
+      log.info("Product updated: {}", saved.getId());
+      this.saveOutbox(saved);
 
       return saved;
     } catch (ObjectOptimisticLockingFailureException ex) {
@@ -69,15 +60,28 @@ public class ProductService {
       Product product = productRepository.findById(productId)
           .orElseThrow(() -> new RuntimeException("Product not found"));
       product.addStock(amount);
-
       Product updated = productRepository.save(product);
       log.info("Product updated: {}", updated.getId());
       this.saveOutbox(updated);
-
       return updated;
     } catch (ObjectOptimisticLockingFailureException ex) {
       // Este é o caso do Optimistic Lock falhar
       // Ex.: outro processo atualizou o registro primeiro.
+      throw new RuntimeException("Concurrency conflict detected (optimistic lock)");
+    }
+  }
+
+  @Transactional
+  public Product removeStock(UUID productId, int amount) {
+    try {
+      Product product = productRepository.findById(productId)
+          .orElseThrow(() -> new RuntimeException("Product not found"));
+      product.removeStock(amount);
+      Product updated = productRepository.save(product);
+      log.info("Product updated: {}", updated.getId());
+      this.saveOutbox(updated);
+      return updated;
+    } catch (ObjectOptimisticLockingFailureException ex) {
       throw new RuntimeException("Concurrency conflict detected (optimistic lock)");
     }
   }
@@ -96,35 +100,7 @@ public class ProductService {
     event.setPayload(payload);
     event.setCreatedAt(Instant.now());
     outboxRepository.save(event);
-    log.info("Outbox event saved: {}", event.getId());
-  }
-
-  @Transactional
-  public Product removeStock(UUID productId, int amount) {
-    try {
-      Product product = productRepository.findById(productId)
-          .orElseThrow(() -> new RuntimeException("Product not found"));
-      product.removeStock(amount);
-      Product updated = productRepository.save(product);
-
-      Map<String, Object> payload = objectMapper.convertValue(
-          new StockUpdatedEvent(updated.getId().toString(), updated.getQuantity(), updated.getName()),
-          Map.class);
-
-      Outbox event = new Outbox();
-      event.setId(UUID.randomUUID());
-      event.setAggregateType("Stock");
-      event.setAggregateId(updated.getId().toString());
-      event.setType("stock-updated");
-      event.setPayload(payload);
-      event.setCreatedAt(Instant.now());
-      log.info("Outbox event created: {}", event.getId());
-
-      return updated;
-
-    } catch (ObjectOptimisticLockingFailureException ex) {
-      throw new RuntimeException("Concurrency conflict detected (optimistic lock)");
-    }
+    log.info("Outbox event created: {}", event.getId());
   }
 
 }

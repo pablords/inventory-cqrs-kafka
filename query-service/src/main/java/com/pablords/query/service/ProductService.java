@@ -1,5 +1,7 @@
 package com.pablords.query.service;
 
+import java.util.List;
+
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.retry.support.RetryTemplate;
@@ -13,16 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 import com.pablords.query.model.ProductView;
 import com.pablords.query.repository.ProductViewRepository;
 
-
 @Service
 @Slf4j
-public class ProductViewUpdater {
+public class ProductService {
 
   private final ProductViewRepository productViewRepository;
   private RetryTemplate retryTemplate;
 
-  public ProductViewUpdater(ProductViewRepository productViewRepository
-    ) {
+  public ProductService(ProductViewRepository productViewRepository) {
     this.productViewRepository = productViewRepository;
   }
 
@@ -32,7 +32,7 @@ public class ProductViewUpdater {
     log.info("Received stock updated event id: {}, amount: {}", event.getProductId(), event.getNewQuantity());
     try {
       // if (event.getName().equals("Product A")) {
-      //   throw new RuntimeException("Simulated error");
+      // throw new RuntimeException("Simulated error");
       // }
       ProductView view = productViewRepository.findById(event.getProductId())
           .orElse(new ProductView(event.getProductId(), event.getName(), 0, "stock-updated"));
@@ -63,7 +63,7 @@ public class ProductViewUpdater {
 
         view.setQuantity(event.getNewQuantity());
         view.setTopic("stock-updated-dlq");
-     
+
         view.setLog(context.getLastThrowable().getMessage());
 
         productViewRepository.save(view);
@@ -77,5 +77,14 @@ public class ProductViewUpdater {
       // Decida o que fazer com mensagens que falham após todas as tentativas
     }
 
+  }
+
+  public ProductView findById(String id) {
+    return productViewRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Product not found in read model"));
+  }
+
+  public List<ProductView> findAll() {
+    return productViewRepository.findAll();
   }
 }
