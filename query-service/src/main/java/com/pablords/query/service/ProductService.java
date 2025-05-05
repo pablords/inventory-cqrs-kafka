@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +19,6 @@ import com.pablords.query.repository.ProductViewRepository;
 public class ProductService {
 
   private final ProductViewRepository productViewRepository;
-  private RetryTemplate retryTemplate;
 
   public ProductService(ProductViewRepository productViewRepository) {
     this.productViewRepository = productViewRepository;
@@ -31,9 +29,9 @@ public class ProductService {
   public void onStockUpdated(StockUpdatedEvent event, Acknowledgment acknowledgment) {
     log.info("Received stock updated event id: {}, amount: {}", event.getProductId(), event.getNewQuantity());
     try {
-      // if (event.getName().equals("Product A")) {
-      // throw new RuntimeException("Simulated error");
-      // }
+      if (event.getName().equals("Product A")) {
+        throw new RuntimeException("Simulated error");
+      }
       ProductView view = productViewRepository.findById(event.getProductId())
           .orElse(new ProductView(event.getProductId(), event.getName(), 0, "stock-updated"));
 
@@ -51,27 +49,23 @@ public class ProductService {
     }
   }
 
+  @Transactional
   @KafkaListener(topics = "${consumer.topic.name}-dlq", groupId = "dlq-${consumer.group-id}", containerFactory = "kafkaListenerContainerFactory", concurrency = "3")
-  public void processDLQMessage(StockUpdatedEvent event,
+  public void consumeDLQMessage(StockUpdatedEvent event,
       Acknowledgment acknowledgment) {
     try {
-      retryTemplate.execute(context -> {
-        log.info("Retrying message from DLQ: {}, count: {}", event.getProductId(), context.getRetryCount());
-        // Tente processar a mensagem novamente
-        ProductView view = productViewRepository.findById(event.getProductId())
-            .orElse(new ProductView(event.getProductId(), event.getName(), 0, "stock-updated-dlq"));
+      log.info("Retrying message from DLQ: {}", event.getProductId());
 
-        view.setQuantity(event.getNewQuantity());
-        view.setTopic("stock-updated-dlq");
+      ProductView view = productViewRepository.findById(event.getProductId())
+          .orElse(new ProductView(event.getProductId(), event.getName(), 0, "stock-updated-dlq"));
 
-        view.setLog(context.getLastThrowable().getMessage());
+      view.setQuantity(event.getNewQuantity());
+      view.setTopic("stock-updated-dlq");
 
-        productViewRepository.save(view);
+      productViewRepository.save(view);
 
-        // Confirma a mensagem manualmente após o processamento bem-sucedido
-        acknowledgment.acknowledge();
-        return null;
-      });
+      acknowledgment.acknowledge();
+
     } catch (Exception e) {
       log.error("Failed to process message from DLQ after retries: {}", event, e);
       // Decida o que fazer com mensagens que falham após todas as tentativas
