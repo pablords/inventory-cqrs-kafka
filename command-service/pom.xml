@@ -68,8 +68,13 @@
       <groupId>io.hypersistence</groupId>
       <artifactId>hypersistence-utils-hibernate-60</artifactId>
       <version>3.9.0</version>
-  </dependency>
+    </dependency>
 
-    
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
   </dependencies>
 </project>

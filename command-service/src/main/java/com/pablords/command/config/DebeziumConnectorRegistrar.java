@@ -1,6 +1,8 @@
 package com.pablords.command.config;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -13,9 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@Slf4j
 public class DebeziumConnectorRegistrar {
 
-  private static final Logger log = LoggerFactory.getLogger(DebeziumConnectorRegistrar.class);
   private final RestTemplate restTemplate;
 
   public DebeziumConnectorRegistrar(RestTemplateBuilder builder) {

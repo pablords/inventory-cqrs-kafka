@@ -1,26 +1,24 @@
 package com.pablords.query.service;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pablords.shared.events.StockUpdatedEvent;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pablords.query.model.ProductView;
 import com.pablords.query.repository.ProductViewRepository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
+@Slf4j
 public class ProductViewUpdater {
 
   private final ProductViewRepository productViewRepository;
-  private static final Logger log = LoggerFactory.getLogger(ProductViewUpdater.class);
   private RetryTemplate retryTemplate;
 
   public ProductViewUpdater(ProductViewRepository productViewRepository

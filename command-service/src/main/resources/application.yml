@@ -25,6 +25,8 @@ spring:
 
 logging:
   level:
+    root: info
+    com.pablords: debug
     org:
       hibernate: ERROR
       springframework:

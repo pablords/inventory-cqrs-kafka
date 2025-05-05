@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pablords.command.domain.OutboxEvent;
 import com.pablords.command.domain.Product;
 import com.pablords.shared.events.StockUpdatedEvent;
+
+import lombok.extern.slf4j.Slf4j;
+
 import com.pablords.command.repository.OutboxEventRepository;
 import com.pablords.command.repository.ProductRepository;
 
@@ -18,13 +21,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
+@Slf4j
 public class ProductCommandService {
 
-  private static final Logger log = LoggerFactory.getLogger(ProductCommandService.class);
 
   private final ProductRepository productRepository;
   private final OutboxEventRepository outboxEventRepository;
