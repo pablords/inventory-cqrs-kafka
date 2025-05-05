@@ -17,6 +17,7 @@ O sistema segue o padrão **CQRS**, que separa as responsabilidades de escrita (
   - Gerencia operações de escrita no sistema.
   - Publica eventos no Kafka para notificar o Query Service sobre mudanças no estado.
   - Banco de dados: PostgreSQL.
+  - Implementa o padrão **Outbox Pattern** para garantir a consistência entre o banco de dados e os eventos publicados no Kafka.
 
 - **Query Service**:
   - Consome eventos do Kafka para atualizar o modelo de leitura.
@@ -25,6 +26,7 @@ O sistema segue o padrão **CQRS**, que separa as responsabilidades de escrita (
 
 - **Mensageria**:
   - Utiliza Apache Kafka para comunicação assíncrona entre os serviços.
+  - Implementa **DLQ (Dead Letter Queue)** para lidar com mensagens que não podem ser processadas.
 
 ---
 
@@ -132,11 +134,6 @@ Certifique-se de que os serviços estão rodando corretamente antes de realizar 
 - **Escalabilidade**: Os serviços podem ser escalados independentemente, dependendo da carga de leitura ou escrita.
 - **Desempenho**: O modelo de leitura pode ser otimizado para consultas rápidas, enquanto o modelo de escrita foca na consistência.
 - **Flexibilidade**: Facilita a implementação de diferentes modelos de leitura para atender a requisitos específicos.
+- **Confiabilidade**: O uso do **Outbox Pattern** e da **DLQ** aumenta a resiliência e consistência do sistema.
 
 ---
-
-## Próximos Passos
-
-- Adicionar testes automatizados para garantir a qualidade do sistema.
-- Implementar monitoramento e métricas para os serviços.
-- Explorar a implementação de padrões como Event Sourcing para complementar o CQRS.
