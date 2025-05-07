@@ -29,9 +29,11 @@ public class ProductService {
   public void onStockUpdated(StockUpdatedEvent event, Acknowledgment acknowledgment) {
     log.info("Received stock updated event id: {}, amount: {}", event.getProductId(), event.getNewQuantity());
     try {
-      if (event.getName().equals("Product A")) {
-        throw new RuntimeException("Simulated error");
-      }
+      // Simulação de erro para teste
+      // Descomente a linha abaixo para simular uma falha
+      // if (event.getName().equals("Product A")) {
+      //   throw new RuntimeException("Simulated error");
+      // }
       ProductView view = productViewRepository.findById(event.getProductId())
           .orElse(new ProductView(event.getProductId(), event.getName(), 0, "stock-updated"));
 
