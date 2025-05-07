@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
     com.pablords.shared.config.KafkaProducerConfig.class
 })
 @Slf4j
-public class CommandApplication implements CommandLineRunner {
+public class InventoryApplication implements CommandLineRunner {
 
   @Value("${spring.application.name}")
   String appName;
@@ -27,7 +27,7 @@ public class CommandApplication implements CommandLineRunner {
   }
 
   public static void main(String[] args) {
-    SpringApplication.run(CommandApplication.class, args);
+    SpringApplication.run(InventoryApplication.class, args);
   }
 
 }

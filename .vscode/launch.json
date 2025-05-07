@@ -3,7 +3,7 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Command Service",
+      "name": "inventory-service",
       "request": "launch",
       "mainClass": "com.pablords.command.CommandApplication",
       "projectName": "command-service",
@@ -11,7 +11,7 @@
     },
     {
       "type": "java",
-      "name": "Query Service",
+      "name": "query-service",
       "request": "launch",
       "mainClass": "com.pablords.query.QueryApplication",
       "projectName": "query-service",
