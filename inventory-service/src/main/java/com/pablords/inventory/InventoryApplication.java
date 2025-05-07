@@ -1,4 +1,4 @@
-package com.pablords.command;
+package com.pablords.inventory;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -10,7 +10,7 @@ import org.springframework.retry.annotation.EnableRetry;
 import lombok.extern.slf4j.Slf4j;
 
 
-@SpringBootApplication(scanBasePackages = "com.pablords.command")
+@SpringBootApplication(scanBasePackages = "com.pablords.inventory")
 @EnableRetry
 @Import({
     com.pablords.shared.config.KafkaProducerConfig.class

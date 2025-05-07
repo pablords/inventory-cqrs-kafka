@@ -1,4 +1,4 @@
-package com.pablords.command.config;
+package com.pablords.inventory.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

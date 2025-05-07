@@ -1,10 +1,10 @@
-package com.pablords.command;
+package com.pablords.inventory;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class CommandApplicationTests {
+class inventoryApplicationTests {
 
 	@Test
 	void contextLoads() {

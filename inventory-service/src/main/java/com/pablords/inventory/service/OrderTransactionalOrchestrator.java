@@ -1,4 +1,4 @@
-package com.pablords.command.service;
+package com.pablords.inventory.service;
 
 import java.util.UUID;
 
@@ -6,8 +6,8 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.*;
 import org.springframework.stereotype.Service;
 
-import com.pablords.command.model.Order;
-import com.pablords.command.model.Product;
+import com.pablords.inventory.model.Order;
+import com.pablords.inventory.model.Product;
 
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;

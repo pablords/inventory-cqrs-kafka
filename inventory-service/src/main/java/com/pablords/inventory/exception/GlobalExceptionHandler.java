@@ -1,4 +1,4 @@
-package com.pablords.command.exception;
+package com.pablords.inventory.exception;
 
 
 import org.springframework.http.HttpStatus;

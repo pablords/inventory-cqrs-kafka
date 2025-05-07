@@ -1,4 +1,4 @@
-package com.pablords.command.model;
+package com.pablords.inventory.model;
 
 import java.time.Instant;
 import java.util.Map;

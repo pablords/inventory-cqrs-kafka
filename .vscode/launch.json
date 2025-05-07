@@ -5,7 +5,7 @@
       "type": "java",
       "name": "inventory-service",
       "request": "launch",
-      "mainClass": "com.pablords.command.CommandApplication",
+      "mainClass": "com.pablords.inventory.CommandApplication",
       "projectName": "command-service",
       "args": "--server.port=8080"
     },

@@ -1,7 +1,7 @@
-package com.pablords.command.repository;
+package com.pablords.inventory.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.pablords.command.model.Order;
+import com.pablords.inventory.model.Order;
 
 import java.util.UUID;
 

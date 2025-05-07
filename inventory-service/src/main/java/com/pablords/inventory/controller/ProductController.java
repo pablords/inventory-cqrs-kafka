@@ -1,12 +1,12 @@
-package com.pablords.command.controller;
+package com.pablords.inventory.controller;
 
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import com.pablords.command.model.Product;
-import com.pablords.command.service.ProductService;
+import com.pablords.inventory.model.Product;
+import com.pablords.inventory.service.ProductService;
 
 import lombok.extern.slf4j.Slf4j;
 

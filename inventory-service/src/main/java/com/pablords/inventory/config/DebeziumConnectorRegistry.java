@@ -1,4 +1,4 @@
-package com.pablords.command.config;
+package com.pablords.inventory.config;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;

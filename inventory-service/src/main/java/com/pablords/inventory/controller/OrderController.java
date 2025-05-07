@@ -1,4 +1,4 @@
-package com.pablords.command.controller;
+package com.pablords.inventory.controller;
 
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.pablords.command.model.Order;
-import com.pablords.command.service.OrderTransactionalOrchestrator;
+import com.pablords.inventory.model.Order;
+import com.pablords.inventory.service.OrderTransactionalOrchestrator;
 
 import lombok.extern.slf4j.Slf4j;
 

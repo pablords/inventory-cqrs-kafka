@@ -1,10 +1,10 @@
-package com.pablords.command.service;
+package com.pablords.inventory.service;
 
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
-import com.pablords.command.model.Order;
-import com.pablords.command.repository.OrderRepository;
+import com.pablords.inventory.model.Order;
+import com.pablords.inventory.repository.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
 
 @Service

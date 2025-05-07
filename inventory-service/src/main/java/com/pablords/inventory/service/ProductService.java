@@ -1,4 +1,4 @@
-package com.pablords.command.service;
+package com.pablords.inventory.service;
 
 import org.springframework.stereotype.Service;
 
@@ -9,10 +9,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
-import com.pablords.command.model.Outbox;
-import com.pablords.command.model.Product;
-import com.pablords.command.repository.OutboxRepository;
-import com.pablords.command.repository.ProductRepository;
+import com.pablords.inventory.model.Outbox;
+import com.pablords.inventory.model.Product;
+import com.pablords.inventory.repository.OutboxRepository;
+import com.pablords.inventory.repository.ProductRepository;
 
 import java.time.Instant;
 import java.util.Map;
