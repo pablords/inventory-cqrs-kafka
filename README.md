@@ -1,4 +1,4 @@
-# Inventory Management System
+# E-commerce System
 
 Este projeto é um sistema para gerenciar produtos e seus estoques, implementado com o padrão **CQRS (Command Query Responsibility Segregation)**. Ele é composto por dois serviços principais:
 
