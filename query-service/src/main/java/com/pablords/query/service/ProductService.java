@@ -1,6 +1,11 @@
 package com.pablords.query.service;
 
+
+import com.pablords.query.exception.NotFoundException;
+
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -76,11 +81,11 @@ public class ProductService {
   }
 
   public ProductView findById(String id) {
-    return productViewRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Product not found in read model"));
+  return productViewRepository.findById(id)
+    .orElseThrow(() -> new NotFoundException("Product not found in read model"));
   }
 
-  public List<ProductView> findAll() {
-    return productViewRepository.findAll();
+  public Page<ProductView> findAll(Pageable pageable) {
+    return productViewRepository.findAll(pageable);
   }
 }
