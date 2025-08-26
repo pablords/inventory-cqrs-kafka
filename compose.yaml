@@ -8,6 +8,7 @@ services:
       - "2181:2181"
 
   kafka:
+    platform: linux/amd64
     image: confluentinc/cp-kafka:7.0.1
     depends_on:
       - zookeeper
@@ -31,7 +32,7 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
-      POSTGRES_DB: inventory
+      POSTGRES_DB: command
     ports:
       - "5432:5432"
     volumes:
@@ -78,7 +79,7 @@ services:
       CONNECT_REST_ADVERTISED_HOST_NAME: connect
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_PLUGIN_PATH: /kafka/connect,/usr/share/java,/usr/share/confluent-hub-components
-      CONNECT_DATABASE_HISTORY_KAFKA_TOPIC: schema-changes.inventory
+      CONNECT_DATABASE_HISTORY_KAFKA_TOPIC: schema-changes.command
       CONNECT_DATABASE_HISTORY_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       - kafka

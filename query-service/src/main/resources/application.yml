@@ -4,7 +4,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/inventory
+      uri: mongodb://localhost:27017/command
 
 consumer:
   group-id: query-service

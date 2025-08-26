@@ -15,7 +15,7 @@
 
   <modules>
     <module>shared</module>
-    <module>inventory-service</module>
+    <module>command-service</module>
     <module>query-service</module>
   </modules>
 

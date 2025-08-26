@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: command-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/command
+    username: user
+    password: pass
+    hikari:
+      maximum-pool-size: 10
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+      schema-locations: classpath:schema.sql
+
+
+debezium:
+  connector:
+    name: command-postgres-connector
+    config:
+      connector.class: io.debezium.connector.postgresql.PostgresConnector
+      database.hostname: db-command
+      database.port: 5432
+      database.user: user
+      database.password: pass
+      database.dbname: command
+      database.server.name: postgres-command
+      plugin.name: pgoutput
+      slot.name: outbox_slot
+      table.include.list: public.outbox_event
+      key.converter: org.apache.kafka.connect.json.JsonConverter
+      value.converter: org.apache.kafka.connect.storage.StringConverter
+      value.converter.schemas.enable: false
+      key.converter.schemas.enable: false
+      transforms: outbox
+      transforms.outbox.type: io.debezium.transforms.outbox.EventRouter
+      transforms.outbox.table.field.event.id: id
+      transforms.outbox.table.field.event.key: aggregate_id
+      transforms.outbox.table.field.event.payload: payload
+      transforms.outbox.route.by.field: type
+      transforms.outbox.route.topic.replacement: outbox_event.${routedByValue}
+      topic.prefix: command
+
+logging:
+  level:
+    root: info
+    com.pablords: debug
+    org:
+      hibernate: ERROR
+      springframework:
+        orm.jpa: ERROR
+        transaction: TRACE
+        kafka.transaction: DEBUG
+
+server:
+  servlet:
+    context-path: /api/v1

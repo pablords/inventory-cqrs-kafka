@@ -3,9 +3,9 @@
   "configurations": [
     {
       "type": "java",
-      "name": "inventory-service",
+      "name": "command-service",
       "request": "launch",
-      "mainClass": "com.pablords.inventory.CommandApplication",
+      "mainClass": "com.pablords.command.CommandApplication",
       "projectName": "command-service",
       "args": "--server.port=8080"
     },
