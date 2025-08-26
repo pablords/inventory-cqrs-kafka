@@ -1,6 +1,7 @@
 package com.pablords.command.model;
 
 import jakarta.persistence.*;
+import com.pablords.command.exception.ErrorMessages;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -38,7 +39,7 @@ public class Product {
 
   public void removeStock(int amount) {
     if (this.quantity < amount) {
-      throw new RuntimeException("Not enough stock");
+      throw new RuntimeException(ErrorMessages.INSUFFICIENT_STOCK.getMessage());
     }
     this.quantity -= amount;
     this.updatedAt = LocalDateTime.now();

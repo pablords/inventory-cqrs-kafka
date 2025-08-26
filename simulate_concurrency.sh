@@ -1,27 +1,33 @@
 #!/bin/bash
 
-# Atualiza o estoque do mesmo produto em paralelo
-curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/add" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "amount=10" &
+amounts=(10 20 30)
+pids=()
 
-curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/add" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "amount=20" &
+for amount in "${amounts[@]}"; do
+  {
+    response=$(curl -s -w "\n%{http_code}" -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/add" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "amount=$amount")
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | sed '$d')
+    if [[ "$http_code" == "200" || "$http_code" == "201" ]]; then
+      echo -e "\033[1;32m[SUCCESS]\033[0m Request add amount=$amount: Estoque alterado com sucesso. Resposta: $body"
+    else
+      echo -e "\033[1;31m[ERROR]\033[0m Request add amount=$amount: Falha ao alterar estoque. Status: $http_code. Resposta: $body"
+    fi
+  } &
+  pids+=($!)
+done
 
-curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/add" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "amount=30" &
+for pid in "${pids[@]}"; do
+  wait $pid
+done
 
-# Aguarda o processamento dos eventos
-sleep 5
+echo -e "\nConsulta do modelo de leitura após concorrência:"
+curl -s -X GET "http://localhost:8081/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d" \
+     -H "Content-Type: application/x-www-form-urlencoded" | jq .
 
-# Consulta o modelo de leitura
-curl -X GET "http://localhost:8081/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d" \
-     -H "Content-Type: application/x-www-form-urlencoded"
-
-
-# Cria um novo pedido
-curl -X POST "http://localhost:8080/api/v1/orders" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "productId=a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d&quantity=5" 
+# echo -e "\nCriando novo pedido:"
+# curl -s -X POST "http://localhost:8080/api/v1/orders" \
+#      -H "Content-Type: application/x-www-form-urlencoded" \
+#      -d "productId=a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d&quantity=5" | jq .

@@ -1,10 +1,13 @@
 package com.pablords.command.service;
 
-import org.springframework.stereotype.Service;
+
+import com.pablords.command.exception.BusinessException;
+import com.pablords.command.exception.ErrorMessages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pablords.shared.events.StockUpdatedEvent;
 
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -35,10 +38,14 @@ public class ProductService {
 
   @Transactional(propagation = Propagation.REQUIRED)
   public Product removeStock(UUID productId, int amount) {
-    Product product = productRepository.findById(productId)
-        .orElseThrow(() -> new RuntimeException("Product not found"));
+  Product product = productRepository.findById(productId)
+    .orElseThrow(() -> new BusinessException(ErrorMessages.PRODUCT_NOT_FOUND.getMessage()));
 
-    product.removeStock(amount);
+    try {
+      product.removeStock(amount);
+    } catch (RuntimeException e) {
+  throw new BusinessException(e.getMessage());
+    }
     Product updated = productRepository.save(product);
     saveOutbox(updated);
     return updated;
@@ -46,15 +53,20 @@ public class ProductService {
 
   @Transactional(propagation = Propagation.REQUIRED)
   public Product addStock(UUID productId, int amount) {
-    Product product = productRepository.findById(productId)
-        .orElseThrow(() -> new RuntimeException("Product not found"));
+  Product product = productRepository.findById(productId)
+    .orElseThrow(() -> new BusinessException(ErrorMessages.PRODUCT_NOT_FOUND.getMessage()));
 
-    product.addStock(amount);
+    try {
+      product.addStock(amount);
+    } catch (RuntimeException e) {
+  throw new BusinessException(e.getMessage());
+    }
     Product updated = productRepository.save(product);
     saveOutbox(updated);
     return updated;
   }
 
+  @SuppressWarnings("unchecked")
   private void saveOutbox(Product updatedProduct) {
     log.info("Saving outbox event for product: {}", updatedProduct.getId());
     Map<String, Object> payload = objectMapper.convertValue(
