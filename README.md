@@ -61,7 +61,7 @@ docker-compose up -d
 ```bash
 curl -X POST "http://localhost:8080/api/v1/products" \
      -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "name=Produto1&initialQty=10"
+     -d '{"name": "Produto1","initialQty":10}'
 ```
 
 #### 2. Adicionar Estoque a um Produto
@@ -71,8 +71,8 @@ curl -X POST "http://localhost:8080/api/v1/products" \
 **Exemplo de comando `curl`:**
 ```bash
 curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/add" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "amount=5"
+     -H "Content-Type: application/json" \
+     -d '{"amount":5}'
 ```
 
 #### 3. Subtrair Estoque de um Produto
@@ -83,7 +83,7 @@ curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f
 ```bash
 curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/remove" \
      -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "amount=5"
+     -d '{"amount":5}'
 ```
 ---
 

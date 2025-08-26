@@ -28,8 +28,6 @@ public class OrderTransactionalOrchestrator {
       RuntimeException.class }, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
   @Transactional
   public Order processOrder(UUID productId, int quantity) {
-    if (quantity <= 0)
-      throw new IllegalArgumentException("Quantity must be greater than 0");
 
     Product product = productService.removeStock(productId, quantity);
     Order order = orderService.createOrder(product.getId(), quantity);

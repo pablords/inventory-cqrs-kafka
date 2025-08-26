@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.pablords.command.model.Product;
 import com.pablords.command.dto.ProductDTO;
+import com.pablords.command.dto.CreateProductRequest;
+import com.pablords.command.dto.UpdateStockRequest;
+import jakarta.validation.Valid;
 import com.pablords.command.service.ProductService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -24,23 +27,23 @@ public class ProductController {
   }
 
   @PostMapping
-  public ResponseEntity<ProductDTO> create(@RequestParam String name, @RequestParam int initialQty) {
-    log.info("Creating product with name: {} and initial quantity: {}", name, initialQty);
-    Product product = service.createProduct(name, initialQty);
+  public ResponseEntity<ProductDTO> create(@Valid @RequestBody CreateProductRequest request) {
+    log.info("Creating product with name: {} and initial quantity: {}", request.name(), request.initialQty());
+    Product product = service.createProduct(request.name(), request.initialQty());
     return ResponseEntity.status(HttpStatus.CREATED).body(ProductDTO.fromEntity(product));
   }
 
   @PostMapping("/{id}/add")
-  public ResponseEntity<ProductDTO> addStock(@PathVariable String id, @RequestParam int amount) {
-    log.info("Added quantity: {}", amount);
-    Product product = service.addStock(UUID.fromString(id), amount);
+  public ResponseEntity<ProductDTO> addStock(@PathVariable String id, @Valid @RequestBody UpdateStockRequest request) {
+    log.info("Added quantity: {}", request.amount());
+    Product product = service.addStock(UUID.fromString(id), request.amount());
     return ResponseEntity.ok(ProductDTO.fromEntity(product));
   }
 
   @PostMapping("/{id}/remove")
-  public ResponseEntity<ProductDTO> removeStock(@PathVariable String id, @RequestParam int amount) {
-    log.info("Remove quantity: {}", amount);
-    Product product = service.removeStock(UUID.fromString(id), amount);
+  public ResponseEntity<ProductDTO> removeStock(@PathVariable String id, @Valid @RequestBody UpdateStockRequest request) {
+    log.info("Remove quantity: {}", request.amount());
+    Product product = service.removeStock(UUID.fromString(id), request.amount());
     return ResponseEntity.ok(ProductDTO.fromEntity(product));
   }
 }

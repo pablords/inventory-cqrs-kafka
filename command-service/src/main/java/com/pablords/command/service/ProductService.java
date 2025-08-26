@@ -1,6 +1,5 @@
 package com.pablords.command.service;
 
-
 import com.pablords.command.exception.BusinessException;
 import com.pablords.command.exception.ErrorMessages;
 
@@ -21,8 +20,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-
-
 @Service
 @Slf4j
 public class ProductService {
@@ -38,13 +35,13 @@ public class ProductService {
 
   @Transactional(propagation = Propagation.REQUIRED)
   public Product removeStock(UUID productId, int amount) {
-  Product product = productRepository.findById(productId)
-    .orElseThrow(() -> new BusinessException(ErrorMessages.PRODUCT_NOT_FOUND.getMessage()));
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new BusinessException(ErrorMessages.PRODUCT_NOT_FOUND.getMessage()));
 
     try {
       product.removeStock(amount);
     } catch (RuntimeException e) {
-  throw new BusinessException(e.getMessage());
+      throw new BusinessException(e.getMessage());
     }
     Product updated = productRepository.save(product);
     saveOutbox(updated);
@@ -53,13 +50,13 @@ public class ProductService {
 
   @Transactional(propagation = Propagation.REQUIRED)
   public Product addStock(UUID productId, int amount) {
-  Product product = productRepository.findById(productId)
-    .orElseThrow(() -> new BusinessException(ErrorMessages.PRODUCT_NOT_FOUND.getMessage()));
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new BusinessException(ErrorMessages.PRODUCT_NOT_FOUND.getMessage()));
 
     try {
       product.addStock(amount);
     } catch (RuntimeException e) {
-  throw new BusinessException(e.getMessage());
+      throw new BusinessException(e.getMessage());
     }
     Product updated = productRepository.save(product);
     saveOutbox(updated);
