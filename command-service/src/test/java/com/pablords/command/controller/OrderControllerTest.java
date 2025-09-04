@@ -1,8 +1,8 @@
 package com.pablords.command.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pablords.command.dto.CreateOrderRequest;
-import com.pablords.command.dto.OrderDTO;
+import com.pablords.command.dto.request.CreateOrderDTO;
+import com.pablords.command.dto.response.OrderDTO;
 import com.pablords.command.model.Order;
 import com.pablords.command.service.OrderTransactionalOrchestrator;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,7 @@ class OrderControllerTest {
     @Test
     void createOrder_success() throws Exception {
         Mockito.when(orchestrator.processOrder(any(UUID.class), any(Integer.class))).thenReturn(order);
-        CreateOrderRequest req = new CreateOrderRequest(productId, 5);
+        CreateOrderDTO req = new CreateOrderDTO(productId, 5);
         mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
@@ -57,7 +57,7 @@ class OrderControllerTest {
 
     @Test
     void createOrder_invalidQuantity() throws Exception {
-        CreateOrderRequest req = new CreateOrderRequest(productId, 0);
+        CreateOrderDTO req = new CreateOrderDTO(productId, 0);
         mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))

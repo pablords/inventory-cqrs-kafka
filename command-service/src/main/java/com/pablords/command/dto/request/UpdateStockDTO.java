@@ -1,7 +1,7 @@
-package com.pablords.command.dto;
+package com.pablords.command.dto.request;
 
 import jakarta.validation.constraints.Min;
 
-public record UpdateStockRequest(
+public record UpdateStockDTO(
     @Min(1) int amount
 ) {}

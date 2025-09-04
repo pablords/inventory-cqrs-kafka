@@ -1,7 +1,8 @@
-package com.pablords.command.dto;
+package com.pablords.command.dto.response;
 
 import java.util.UUID;
 import com.pablords.command.model.Order;
+
 
 public record OrderDTO(
     UUID id,

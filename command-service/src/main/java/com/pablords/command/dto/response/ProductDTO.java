@@ -1,4 +1,4 @@
-package com.pablords.command.dto;
+package com.pablords.command.dto.response;
 
 import com.pablords.command.model.Product;
 import java.util.UUID;

@@ -8,12 +8,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.pablords.command.dto.CreateOrderRequest;
-import com.pablords.command.exception.BusinessException;
+
 import com.pablords.command.model.Order;
-import com.pablords.command.dto.OrderDTO;
+import com.pablords.command.dto.request.CreateOrderDTO;
+import com.pablords.command.dto.response.OrderDTO;
 import com.pablords.command.service.OrderTransactionalOrchestrator;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -27,10 +28,7 @@ public class OrderController {
   }
 
   @PostMapping
-  public ResponseEntity<OrderDTO> create(@RequestBody CreateOrderRequest request) {
-    if (request.quantity() <= 0) {
-      throw new BusinessException("Quantity must be greater than 0");
-    }
+  public ResponseEntity<OrderDTO> create(@Valid @RequestBody CreateOrderDTO request) {
     log.info("Creating order with productId: {} and quantity: {}", request.productId(), request.quantity());
     Order order = orderTransactionalOrchestrator.processOrder(request.productId(), request.quantity());
     return ResponseEntity.status(HttpStatus.CREATED).body(OrderDTO.fromEntity(order));

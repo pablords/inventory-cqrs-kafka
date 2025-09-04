@@ -1,7 +1,7 @@
 package com.pablords.command.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pablords.command.dto.ProductDTO;
+import com.pablords.command.dto.response.ProductDTO;
 import com.pablords.command.model.Product;
 import com.pablords.command.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
