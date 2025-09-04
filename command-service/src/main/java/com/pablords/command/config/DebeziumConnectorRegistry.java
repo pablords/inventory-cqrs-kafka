@@ -19,6 +19,7 @@ public class DebeziumConnectorRegistry {
 
   @Value("${debezium.connector.name}")
   private String connectorName;
+  private String connectUrl = "http://localhost:8083/connectors";
   private final RestTemplate restTemplate;
   private final DebeziumConnectorProperties properties;
 
@@ -32,7 +33,6 @@ public class DebeziumConnectorRegistry {
 
   @PostConstruct
   public void registerConnector() {
-    String connectUrl = "http://localhost:8083/connectors";
 
     try {
       ResponseEntity<String> getResponse = restTemplate.getForEntity(connectUrl + "/" + connectorName, String.class);
