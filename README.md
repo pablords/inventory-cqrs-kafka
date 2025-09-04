@@ -1,4 +1,4 @@
-# E-commerce System
+# inventory-cqrs-kafka
 
 Este projeto é um sistema para gerenciar produtos e seus estoques, implementado com o padrão **CQRS (Command Query Responsibility Segregation)**. Ele é composto por dois serviços principais:
 
@@ -60,7 +60,7 @@ docker-compose up -d
 **Exemplo de comando `curl`:**
 ```bash
 curl -X POST "http://localhost:8080/api/v1/products" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
+     -H "Content-Type: application/json" \
      -d '{"name": "Produto1","initialQty":10}'
 ```
 
@@ -82,7 +82,7 @@ curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f
 **Exemplo de comando `curl`:**
 ```bash
 curl -X POST "http://localhost:8080/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/remove" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
+     -H "Content-Type: application/json" \
      -d '{"amount":5}'
 ```
 ---
