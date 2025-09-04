@@ -7,30 +7,73 @@ services:
     ports:
       - "2181:2181"
 
-  kafka:
-    platform: linux/amd64
+  kafka-1:
     image: confluentinc/cp-kafka:7.0.1
-    depends_on:
-      - zookeeper
-    networks:
-      - default
+    depends_on: [zookeeper]
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka-1:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
-      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
-    ports:
-      - "9092:9092"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      # Tópicos internos com 3 réplicas (3 brokers)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"  
+    ports: ["9092:9092"]
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9092"]
+      test: ["CMD", "bash", "-lc", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 20
+
+  kafka-2:
+    image: confluentinc/cp-kafka:7.0.1
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9093,PLAINTEXT_INTERNAL://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9093,PLAINTEXT_INTERNAL://kafka-2:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"  
+    ports: ["9093:9093"]
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "kafka-topics --bootstrap-server localhost:9093 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  kafka-3:
+    image: confluentinc/cp-kafka:7.0.1
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9094,PLAINTEXT_INTERNAL://0.0.0.0:29094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9094,PLAINTEXT_INTERNAL://kafka-3:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"  
+    ports: ["9094:9094"]
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "kafka-topics --bootstrap-server localhost:9094 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
 
   db-command:
     image: debezium/postgres:15
@@ -52,18 +95,27 @@ services:
     platform: linux/amd64
     image: confluentinc/cp-kafka:7.0.1
     depends_on:
-      kafka:
-        condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      "
-      sleep 5 &&
-      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic outbox_event.stock-updated-dlq --partitions 1 --replication-factor 1 --config retention.ms=604800000
-      # kafka-configs --bootstrap-server kafka:29092 --alter --entity-type topics --entity-name outbox_event.stock-updated-dlq --add-config retention.ms=604800000
-      exit 0
-      "
-    networks:
-      - default
+      kafka-1: { condition: service_healthy }
+      kafka-2: { condition: service_healthy }
+      kafka-3: { condition: service_healthy }
+    environment:
+      BOOTSTRAP: kafka-1:29092,kafka-2:29093,kafka-3:29094
+      # overrides opcionais:
+      # TOPIC_MAIN: outbox_event.stock-updated
+      # TOPIC_DLQ: outbox_event.stock-updated-dlq
+      # PARTITIONS_MAIN: "6"
+      # PARTITIONS_DLQ: "1"
+      # RF: "3"
+      # MIN_ISR: "2"
+      # RETENTION_MS_MAIN: "604800000"
+      # RETENTION_MS_DLQ: "604800000"
+      # MAX_TRIES: "30"
+      # SLEEP_SECS: "2"
+    volumes:
+      - ./kafka_init.sh:/kafka_init.sh:rw
+    entrypoint: ["/bin/sh", "-c", "chmod +x /kafka_init.sh && /kafka_init.sh"]
+    networks: [default]
+
 
 
   db-query:
@@ -74,42 +126,35 @@ services:
   kafka-ui:
     image: obsidiandynamics/kafdrop:latest
     container_name: kafka-ui
-    networks:
-      - default
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - 9000:9000
+    ports: ["9000:9000"]
     environment:
-      KAFKA_BROKERCONNECT: kafka:29092
+      KAFKA_BROKERCONNECT: kafka-1:29092,kafka-2:29093,kafka-3:29094
+    depends_on:
+      kafka-1: { condition: service_healthy }
+      kafka-2: { condition: service_healthy }
+      kafka-3: { condition: service_healthy }
+    networks: [default]
 
   connect:
     image: debezium/connect:2.6
-    networks:
-      - default
-    ports:
-      - 8083:8083
+    ports: ["8083:8083"]
     environment:
-      BOOTSTRAP_SERVERS: kafka:29092
+      BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29093,kafka-3:29094
       GROUP_ID: 1
       CONFIG_STORAGE_TOPIC: connect-configs
       OFFSET_STORAGE_TOPIC: connect-offsets
       STATUS_STORAGE_TOPIC: connect-status
-      # CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-      # CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-      # CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: false
-      # CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: false
       CONNECT_REST_ADVERTISED_HOST_NAME: connect
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_PLUGIN_PATH: /kafka/connect,/usr/share/java,/usr/share/confluent-hub-components
       CONNECT_DATABASE_HISTORY_KAFKA_TOPIC: schema-changes.command
-      CONNECT_DATABASE_HISTORY_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_DATABASE_HISTORY_KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29093,kafka-3:29094
     depends_on:
-      kafka:
-        condition: service_healthy
-      db-command:
-        condition: service_started
+      kafka-1: { condition: service_healthy }
+      kafka-2: { condition: service_healthy }
+      kafka-3: { condition: service_healthy }
+      db-command: { condition: service_started }
+    networks: [default]
 
 volumes:
   db_data:
