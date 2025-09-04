@@ -3,7 +3,6 @@ package com.pablords.query.service;
 
 import com.pablords.query.exception.NotFoundException;
 
-import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,9 +35,9 @@ public class ProductService {
     try {
       // Simulação de erro para teste
       // Descomente a linha abaixo para simular uma falha
-      // if (event.getName().equals("Product A")) {
-      //   throw new RuntimeException("Simulated error");
-      // }
+      if (event.getName().equals("Product A")) {
+        throw new RuntimeException("Simulated error");
+      }
       ProductView view = productViewRepository.findById(event.getProductId())
           .orElse(new ProductView(event.getProductId(), event.getName(), 0, "stock-updated"));
 
@@ -72,7 +71,7 @@ public class ProductService {
       productViewRepository.save(view);
 
       acknowledgment.acknowledge();
-
+      log.info("Message processed successfully from DLQ: {}", event.getProductId());
     } catch (Exception e) {
       log.error("Failed to process message from DLQ after retries: {}", event, e);
       // Decida o que fazer com mensagens que falham após todas as tentativas
