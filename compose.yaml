@@ -26,6 +26,11 @@ services:
       KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
     ports:
       - "9092:9092"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   db-command:
     image: debezium/postgres:15
@@ -43,6 +48,24 @@ services:
               -c max_replication_slots=10
               -c max_connections=100
 
+  kafka-init:
+    platform: linux/amd64
+    image: confluentinc/cp-kafka:7.0.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "
+      sleep 5 &&
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic outbox_event.stock-updated-dlq --partitions 1 --replication-factor 1 --config retention.ms=604800000
+      # kafka-configs --bootstrap-server kafka:29092 --alter --entity-type topics --entity-name outbox_event.stock-updated-dlq --add-config retention.ms=604800000
+      exit 0
+      "
+    networks:
+      - default
+
+
   db-query:
     image: mongo:latest
     ports:
@@ -54,7 +77,8 @@ services:
     networks:
       - default
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     ports:
       - 9000:9000
     environment:
@@ -82,9 +106,10 @@ services:
       CONNECT_DATABASE_HISTORY_KAFKA_TOPIC: schema-changes.command
       CONNECT_DATABASE_HISTORY_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
-      - kafka
-      - db-command
-
+      kafka:
+        condition: service_healthy
+      db-command:
+        condition: service_started
 
 volumes:
   db_data:
