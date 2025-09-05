@@ -56,7 +56,7 @@ public class ProductService {
   }
 
   @Transactional
-  @KafkaListener(topics = "${consumer.topic.name}-dlq", groupId = "dlq-${consumer.group-id}", containerFactory = "kafkaListenerContainerFactory", concurrency = "3")
+  @KafkaListener(topics = "${consumer.topic.name}-dlq", groupId = "dlq-${consumer.group-id}", containerFactory = "kafkaDlqListenerContainerFactory", concurrency = "1")
   public void consumeDLQMessage(StockUpdatedEvent event,
       Acknowledgment acknowledgment) {
     try {
