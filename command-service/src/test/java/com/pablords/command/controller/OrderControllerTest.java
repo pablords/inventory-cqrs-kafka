@@ -3,6 +3,8 @@ package com.pablords.command.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pablords.command.dto.request.CreateOrderDTO;
 import com.pablords.command.dto.request.OrderItemCreateDTO;
+import com.pablords.command.dto.response.OrderDTO;
+import com.pablords.command.dto.response.OrderItemDTO;
 import com.pablords.command.model.Order;
 import com.pablords.command.model.OrderItem;
 import com.pablords.command.service.OrderTransactionalOrchestrator;
@@ -32,26 +34,22 @@ class OrderControllerTest {
     private OrderTransactionalOrchestrator orchestrator;
 
     private ObjectMapper objectMapper = new ObjectMapper();
-    private List<OrderItem> items;
+    private List<OrderItemDTO> items;
     private List<OrderItemCreateDTO> productsDto = List.of(
             new OrderItemCreateDTO(UUID.randomUUID(), 3),
             new OrderItemCreateDTO(UUID.randomUUID(), 2));
-    private Order order;
+    private OrderDTO order;
     private String requestId;
 
     @BeforeEach
     void setUp() {
-        requestId = UUID.randomUUID().toString();
         items = List.of(
-                new OrderItem(),
-                new OrderItem()
+                new OrderItemDTO(UUID.randomUUID(), UUID.randomUUID(), 3),
+                new OrderItemDTO(UUID.randomUUID(), UUID.randomUUID(), 2)
         );
 
+        order = new OrderDTO(UUID.randomUUID(), items, "COMPLETED");
 
-        order = new Order();
-        order.setItems(items);
-        order.setId(UUID.randomUUID());
-        order.setStatus("COMPLETED");
     }
 
     @Test
@@ -62,7 +60,7 @@ class OrderControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(order.getId().toString()))
+                .andExpect(jsonPath("$.id").value(order.id().toString()))
                 .andExpect(jsonPath("$.quantity").value(5))
                 .andExpect(jsonPath("$.status").value("COMPLETED"));
     }
