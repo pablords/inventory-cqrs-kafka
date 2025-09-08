@@ -115,7 +115,7 @@ curl -X GET "http://localhost:8081/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3
 ```bash
 curl -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: 7b61a3c1-9a5b-4d7e-9e45-0ef9b6f2f0aa" \
+  -H "Idempotency-Key: 6b51d5e2-322a-42c9-af24-1864bc67ea27" \
   -d '{
     "items": [
       { "productId": "a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d", "quantity": 2 },

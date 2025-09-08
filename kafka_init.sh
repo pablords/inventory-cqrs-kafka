@@ -13,8 +13,8 @@ BOOTSTRAP="${BOOTSTRAP:-kafka-1:29092,kafka-2:29093,kafka-3:29094}"
 #   TOPIC_MAIN="outbox-event-stock-updated"
 #   TOPIC_DLQ="outbox-event-stock-updated-dlq"
 # e ajuste producers/consumers.)
-TOPIC_MAIN="${TOPIC_MAIN:-outbox_event.stock-updated}"
-TOPIC_DLQ="${TOPIC_DLQ:-outbox_event.stock-updated-dlq}"
+TOPIC_MAIN="${TOPIC_MAIN:-outbox_events.stock-updated}"
+TOPIC_DLQ="${TOPIC_DLQ:-outbox_events.stock-updated-dlq}"
 
 PARTITIONS_MAIN="${PARTITIONS_MAIN:-6}"
 PARTITIONS_DLQ="${PARTITIONS_DLQ:-1}"

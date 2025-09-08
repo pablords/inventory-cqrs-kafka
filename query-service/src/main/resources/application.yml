@@ -9,7 +9,7 @@ spring:
 consumer:
   group-id: query-service
   topic:
-    name: outbox_event.stock-updated
+    name: outbox_events.stock-updated
 
   properties:
     auto-offset-reset: earliest

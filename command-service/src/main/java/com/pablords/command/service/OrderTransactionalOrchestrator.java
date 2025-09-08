@@ -4,11 +4,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.OptimisticLockException;
@@ -30,13 +27,13 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pablords.command.dto.request.CreateOrderDTO;
-import com.pablords.command.dto.request.OrderItemCreateDTO;
 import com.pablords.command.dto.response.OrderDTO;
 import com.pablords.command.dto.response.OrderItemDTO;
 import com.pablords.command.model.Order;
 import com.pablords.command.model.OrderItem;
 import com.pablords.command.model.Outbox;
 import com.pablords.command.repository.IdempotencyRepository;
+import com.pablords.command.repository.OrderRepository;
 import com.pablords.command.repository.OutboxRepository;
 import com.pablords.shared.events.StockReservationCancelledEvent;
 import com.pablords.command.utils.Util;
@@ -46,17 +43,17 @@ import com.pablords.command.utils.Util;
 public class OrderTransactionalOrchestrator {
 
   private final ProductService productService;
-  private final OrderService orderService;
+  private final OrderRepository orderRepository;
   private final OutboxRepository outboxRepository;
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final IdempotencyRepository idemRepo;
 
   public OrderTransactionalOrchestrator(ProductService productService,
-      OrderService orderService,
+      OrderRepository orderRepository,
       OutboxRepository outboxRepository,
       IdempotencyRepository idemRepo) {
     this.productService = productService;
-    this.orderService = orderService;
+    this.orderRepository = orderRepository;
     this.outboxRepository = outboxRepository;
     this.idemRepo = idemRepo;
   }
@@ -131,7 +128,10 @@ public class OrderTransactionalOrchestrator {
         })
         .collect(Collectors.toList());
 
-    Order order = orderService.createOrder(orderItems);
+    Order order = new Order();
+    order.setStatus("COMPLETED");
+    order.setItems(orderItems);
+    orderRepository.save(order);
 
     // 3) persiste a resposta e finaliza a chave
     var ok = idemRepo.findById(UUID.fromString(requestId)).orElseThrow();

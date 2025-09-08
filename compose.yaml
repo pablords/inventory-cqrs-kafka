@@ -101,8 +101,8 @@ services:
     environment:
       BOOTSTRAP: kafka-1:29092,kafka-2:29093,kafka-3:29094
       # overrides opcionais:
-      # TOPIC_MAIN: outbox_event.stock-updated
-      # TOPIC_DLQ: outbox_event.stock-updated-dlq
+      # TOPIC_MAIN: outbox_events.stock-updated
+      # TOPIC_DLQ: outbox_events.stock-updated-dlq
       # PARTITIONS_MAIN: "6"
       # PARTITIONS_DLQ: "1"
       # RF: "3"

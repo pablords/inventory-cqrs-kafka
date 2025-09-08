@@ -36,7 +36,7 @@ debezium:
       database.server.name: postgres-command
       plugin.name: pgoutput
       slot.name: outbox_slot
-      table.include.list: public.outbox_event
+      table.include.list: public.outbox_events
       key.converter: org.apache.kafka.connect.json.JsonConverter
       value.converter: org.apache.kafka.connect.storage.StringConverter
       value.converter.schemas.enable: false
@@ -47,7 +47,7 @@ debezium:
       transforms.outbox.table.field.event.key: aggregate_id
       transforms.outbox.table.field.event.payload: payload
       transforms.outbox.route.by.field: type
-      transforms.outbox.route.topic.replacement: outbox_event.${routedByValue}
+      transforms.outbox.route.topic.replacement: outbox_events.${routedByValue}
       topic.prefix: command
 
 logging:
