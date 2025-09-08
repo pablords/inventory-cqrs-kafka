@@ -3,24 +3,20 @@ package com.pablords.command.service;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import jakarta.persistence.OptimisticLockException;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -32,11 +28,10 @@ import com.pablords.command.dto.response.OrderItemDTO;
 import com.pablords.command.exception.ConcurrencyConflictException;
 import com.pablords.command.model.Order;
 import com.pablords.command.model.OrderItem;
-import com.pablords.command.model.Outbox;
 import com.pablords.command.repository.IdempotencyRepository;
 import com.pablords.command.repository.OrderRepository;
 import com.pablords.command.repository.OutboxRepository;
-import com.pablords.shared.events.StockReservationCancelledEvent;
+
 import com.pablords.command.utils.Util;
 
 @Service
@@ -67,15 +62,15 @@ public class OrderTransactionalOrchestrator {
    * - Ajuste delays conforme métricas reais de conflito.
    */
   @Retryable(value = {
-      ObjectOptimisticLockingFailureException.class, // Hibernate/JPA otimista
-      OptimisticLockException.class, // JPA otimista
-      CannotAcquireLockException.class, // timeout de lock no DB
-      PessimisticLockingFailureException.class // falha de lock pessimista (se usar em hotspots)
+      CannotAcquireLockException.class,
+      PessimisticLockingFailureException.class,
   }, maxAttempts = 3, backoff = @Backoff(delay = 300, maxDelay = 2000, multiplier = 2.0), exclude = {
       UnsupportedOperationException.class })
   @Transactional
   public OrderDTO processOrder(CreateOrderDTO request, String requestId) {
-    this.handleIdempotencyData(request, requestId);
+    var idemHit = this.handleIdempotencyData(request, requestId);
+    if (idemHit.isPresent())
+      return idemHit.get();
 
     request.items().stream().forEach(item -> productService.removeStock(item.productId(), item.quantity()));
     var orderItems = request.items().stream()
@@ -110,32 +105,13 @@ public class OrderTransactionalOrchestrator {
         new TypeReference<Map<String, Object>>() {
         });
     ok.setResponseBody(responseBody);
+    idemRepo.save(ok);
     log.info("Order created {}", order.getId());
 
     var dto = new OrderDTO(order.getId(), responseItems, order.getStatus());
     return dto;
   }
 
-  /**
-   * Compensação em transação própria: garante persistência do outbox
-   * mesmo se a transação principal falhar.
-   */
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  protected void saveCompensatingOutbox(UUID productId, int quantity, String reason, String details) {
-    Map<String, Object> payload = objectMapper.convertValue(
-        new StockReservationCancelledEvent(UUID.randomUUID().toString(), productId.toString(), quantity),
-        new TypeReference<Map<String, Object>>() {
-        });
-    Outbox event = new Outbox();
-    event.setId(UUID.randomUUID());
-    event.setAggregateType("Stock");
-    event.setAggregateId(productId.toString());
-    event.setType("stock-reservation-cancelled");
-    event.setPayload(payload);
-    event.setCreatedAt(Instant.now());
-    outboxRepository.save(event);
-    log.info("Compensating outbox event created: {} (reason={}, details={})", event.getId(), reason, details);
-  }
 
   @Transactional(noRollbackFor = ResponseStatusException.class)
   public void markFailedIdem(UUID idemKey, String hash, String reason) {
@@ -184,7 +160,7 @@ public class OrderTransactionalOrchestrator {
         }
       }
     } catch (NoSuchAlgorithmException e) {
-      log.error("Erro inesperado no processOrder, marcando idem como FAILED. requestId={}", requestId, e);
+      log.error("Unexpected error in process order, idem checked with FAILED. requestId={}", requestId, e);
       throw new UncheckedIOException(new IOException(e));
     }
     return Optional.empty();
@@ -193,37 +169,17 @@ public class OrderTransactionalOrchestrator {
   // ====== RECOVERs (um por exceção concorrencial) ======
 
   @Recover
-  public Order recover(ObjectOptimisticLockingFailureException ex, UUID productId, int quantity) {
-    log.error("Optimistic conflict after retries. Executing compensation... productId={}, qty={}", productId, quantity,
-        ex);
-    saveCompensatingOutbox(productId, quantity, "ObjectOptimisticLockingFailureException", ex.getMessage());
-    throw new ConcurrencyConflictException(
-        "Não foi possível processar o pedido por conflito de concorrência (optimistic).");
+  public OrderDTO recover(CannotAcquireLockException ex, CreateOrderDTO req, String requestId) {
+    log.error("Order recover CannotAcquireLock reqId={}", requestId, ex);
+    markFailedIdem(UUID.fromString(requestId), "CannotAcquireLock", ex.getMessage());
+    throw new ConcurrencyConflictException("Timeout de lock, tente novamente.");
   }
 
   @Recover
-  public Order recover(OptimisticLockException ex, UUID productId, int quantity) {
-    log.error("OptimisticLockException after retries. Executing compensation... productId={}, qty={}", productId,
-        quantity, ex);
-    saveCompensatingOutbox(productId, quantity, "OptimisticLockException", ex.getMessage());
-    throw new ConcurrencyConflictException(
-        "Não foi possível processar o pedido por conflito de concorrência (optimistic).");
-  }
-
-  @Recover
-  public Order recover(CannotAcquireLockException ex, UUID productId, int quantity) {
-    log.error("CannotAcquireLock after retries. Executing compensation... productId={}, qty={}", productId, quantity,
-        ex);
-    saveCompensatingOutbox(productId, quantity, "CannotAcquireLockException", ex.getMessage());
-    throw new ConcurrencyConflictException("Não foi possível processar o pedido (timeout de lock).");
-  }
-
-  @Recover
-  public Order recover(PessimisticLockingFailureException ex, UUID productId, int quantity) {
-    log.error("Pessimistic lock failure after retries. Executing compensation... productId={}, qty={}", productId,
-        quantity, ex);
-    saveCompensatingOutbox(productId, quantity, "PessimisticLockingFailureException", ex.getMessage());
-    throw new ConcurrencyConflictException("Não foi possível processar o pedido (pessimistic lock failure).");
+  public OrderDTO recover(PessimisticLockingFailureException ex, CreateOrderDTO req, String requestId) {
+    log.error("Order recover PessimisticLock reqId={}", requestId, ex);
+    markFailedIdem(UUID.fromString(requestId), "PessimisticLock", ex.getMessage());
+    throw new ConcurrencyConflictException("Timeout de lock, tente novamente.");
   }
 
 }
