@@ -5,8 +5,6 @@ import com.pablords.command.dto.request.CreateOrderDTO;
 import com.pablords.command.dto.request.OrderItemCreateDTO;
 import com.pablords.command.dto.response.OrderDTO;
 import com.pablords.command.dto.response.OrderItemDTO;
-import com.pablords.command.model.Order;
-import com.pablords.command.model.OrderItem;
 import com.pablords.command.service.OrderTransactionalOrchestrator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
