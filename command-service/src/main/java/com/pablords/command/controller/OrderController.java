@@ -1,10 +1,12 @@
 package com.pablords.command.controller;
 
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,9 +30,17 @@ public class OrderController {
   }
 
   @PostMapping
-  public ResponseEntity<OrderDTO> create(@Valid @RequestBody CreateOrderDTO request) {
-    log.info("Creating order with productId: {} and quantity: {}", request.productId(), request.quantity());
-    Order order = orderTransactionalOrchestrator.processOrder(request.productId(), request.quantity());
-    return ResponseEntity.status(HttpStatus.CREATED).body(OrderDTO.fromEntity(order));
+  public ResponseEntity<OrderDTO> create(@Valid @RequestBody CreateOrderDTO request,
+      @RequestHeader(value = "Idempotency-Key", required = false) String idemKeyHeader) {
+    String idemKey = (idemKeyHeader == null || idemKeyHeader.isBlank())
+        ? UUID.randomUUID().toString() // fallback elegante
+        : idemKeyHeader;
+    log.info("Creating order with items: {} and idemKeyHeader: {}", request.items(), idemKey);
+    Order order = orderTransactionalOrchestrator.processOrder(request, idemKey);
+
+    return ResponseEntity
+        .status(HttpStatus.CREATED)
+        .header("Idempotency-Key", idemKey) // devolve para o cliente reutilizar em retries
+        .body(OrderDTO.fromEntity(order));
   }
 }

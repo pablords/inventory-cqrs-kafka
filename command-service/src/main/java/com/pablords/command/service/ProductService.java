@@ -40,12 +40,12 @@ public class ProductService {
 
     try {
       product.removeStock(amount);
+      Product updated = productRepository.save(product);
+      saveOutbox(updated);
+      return updated;
     } catch (RuntimeException e) {
       throw new BusinessException(e.getMessage());
     }
-    Product updated = productRepository.save(product);
-    saveOutbox(updated);
-    return updated;
   }
 
   @Transactional(propagation = Propagation.REQUIRED)
@@ -55,12 +55,13 @@ public class ProductService {
 
     try {
       product.addStock(amount);
+      Product updated = productRepository.save(product);
+      saveOutbox(updated);
+      return updated;
     } catch (RuntimeException e) {
       throw new BusinessException(e.getMessage());
     }
-    Product updated = productRepository.save(product);
-    saveOutbox(updated);
-    return updated;
+
   }
 
   @SuppressWarnings("unchecked")
@@ -88,5 +89,10 @@ public class ProductService {
     Product savedProduct = productRepository.save(product);
     saveOutbox(savedProduct);
     return savedProduct;
+  }
+
+  public Product findById(UUID productId) {
+    return productRepository.findById(productId)
+        .orElseThrow(() -> new BusinessException(ErrorMessages.PRODUCT_NOT_FOUND.getMessage()));
   }
 }

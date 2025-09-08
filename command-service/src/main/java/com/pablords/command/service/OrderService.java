@@ -1,9 +1,11 @@
 package com.pablords.command.service;
 
-import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.pablords.command.model.Order;
+import com.pablords.command.model.OrderItem;
 import com.pablords.command.repository.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,9 +19,12 @@ public class OrderService {
     this.orderRepository = orderRepository;
   }
 
-  public Order createOrder(UUID productId, int quantity) {
-    Order order = new Order(productId, quantity);
+  public Order createOrder(List<OrderItem> items) {
+    Order order = new Order();
     order.setStatus("COMPLETED");
+    order.setItems(items);
     return orderRepository.save(order);
   }
+
+
 }

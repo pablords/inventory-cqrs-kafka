@@ -1,10 +1,13 @@
 package com.pablords.command.dto.request;
 
-import java.util.UUID;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import java.util.List;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 
 public record CreateOrderDTO(
-	@NotNull UUID productId,
-	@Positive int quantity
-) {}
+    @NotEmpty(message = "A lista de itens não pode ser vazia")
+    List<@Valid OrderItemCreateDTO> items,
+    String idempotencyKey
+) {
+}
