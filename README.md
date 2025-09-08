@@ -107,6 +107,25 @@ curl -X GET "http://localhost:8081/api/v1/products"
 curl -X GET "http://localhost:8081/api/v1/products/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d"
 ```
 
+
+### 3. Criar idempotency order
+**Endpoint:** `POST /api/v1/orders`  
+**Descrição:** Cria um pedido.  
+
+```bash
+curl -X POST http://localhost:8080/api/v1/orders \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7b61a3c1-9a5b-4d7e-9e45-0ef9b6f2f0aa" \
+  -d '{
+    "items": [
+      { "productId": "a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d", "quantity": 2 },
+      { "productId": "b2c3d4e5-f6a7-4b8c-9d0e-2f3a4b5c6d7e", "quantity": 5 }
+    ],
+    "customerId": "2f0e8d2b-8d7b-4db6-9a6f-1e3f9e9e3d01",
+    "notes": "Entregar no horário comercial"
+  }'
+
+```
 ---
 
 ## Testando Concurrency
