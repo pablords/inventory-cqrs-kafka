@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -12,7 +13,6 @@ import jakarta.persistence.OptimisticLockException;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.dao.CannotAcquireLockException;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pablords.command.dto.request.CreateOrderDTO;
 import com.pablords.command.dto.response.OrderDTO;
 import com.pablords.command.dto.response.OrderItemDTO;
+import com.pablords.command.exception.ConcurrencyConflictException;
 import com.pablords.command.model.Order;
 import com.pablords.command.model.OrderItem;
 import com.pablords.command.model.Outbox;
@@ -69,52 +70,12 @@ public class OrderTransactionalOrchestrator {
       ObjectOptimisticLockingFailureException.class, // Hibernate/JPA otimista
       OptimisticLockException.class, // JPA otimista
       CannotAcquireLockException.class, // timeout de lock no DB
-      DeadlockLoserDataAccessException.class, // deadlock detectado no DB
       PessimisticLockingFailureException.class // falha de lock pessimista (se usar em hotspots)
   }, maxAttempts = 3, backoff = @Backoff(delay = 300, maxDelay = 2000, multiplier = 2.0), exclude = {
       UnsupportedOperationException.class })
   @Transactional
   public OrderDTO processOrder(CreateOrderDTO request, String requestId) {
-    try {
-      String hash = Util.sha256(Util.canonicalJson(request));
-
-      // 1) tenta “reservar” a chave
-      int inserted = idemRepo.tryInsert(UUID.fromString(requestId), hash);
-      if (inserted == 0) {
-        // já existe → decide pela situação
-        var existing = idemRepo.findById(UUID.fromString(requestId)).orElseThrow();
-        if (!existing.getRequestHash().equals(hash)) {
-          log.warn("Idem key reuse with different payload! requestId={}", requestId);
-          throw new ResponseStatusException(HttpStatus.CONFLICT,
-              "Idempotency-Key já usada com payload diferente");
-        }
-        switch (existing.getStatus()) {
-          case "SUCCEEDED" -> {
-            // idem perfeito: devolve o resultado
-            log.info("Idem key hit, returning previous result. requestId={}", requestId);
-            return objectMapper.convertValue(existing.getResponseBody(), OrderDTO.class);
-          }
-          case "IN_PROGRESS" -> {
-            // sua política: esperar? rejeitar?
-            // aqui eu rejeitaria com 409 Conflict
-            log.info("Idem key in progress, rejecting new request. requestId={}", requestId);
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "Pedido com mesma chave está em processamento. Tente novamente."
-            // opcional: header Retry-After via ControllerAdvice
-            );
-          }
-          case "FAILED" -> {
-            // sua política: permitir novo processamento?
-            // aqui eu devolveria 409 também
-            log.info("Idem key marked as FAILED, rejecting new request. requestId={}", requestId);
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tentativa anterior falhou.");
-          }
-        }
-      }
-    } catch (NoSuchAlgorithmException e) {
-      log.error("Erro inesperado no processOrder, marcando idem como FAILED. requestId={}", requestId, e);
-      throw new UncheckedIOException(new IOException(e));
-    }
+    this.handleIdempotencyData(request, requestId);
 
     request.items().stream().forEach(item -> productService.removeStock(item.productId(), item.quantity()));
     var orderItems = request.items().stream()
@@ -186,6 +147,49 @@ public class OrderTransactionalOrchestrator {
     });
   }
 
+  private Optional<OrderDTO> handleIdempotencyData(CreateOrderDTO request, String requestId) {
+    try {
+      String hash = Util.sha256(Util.canonicalJson(request));
+      // 1) tenta “reservar” a chave
+      int inserted = idemRepo.tryInsert(UUID.fromString(requestId), hash);
+      if (inserted == 0) {
+        // já existe → decide pela situação
+        var existing = idemRepo.findById(UUID.fromString(requestId)).orElseThrow();
+        if (!existing.getRequestHash().equals(hash)) {
+          log.warn("Idem key reuse with different payload! requestId={}", requestId);
+          throw new ResponseStatusException(HttpStatus.CONFLICT,
+              "Idempotency-Key já usada com payload diferente");
+        }
+        switch (existing.getStatus()) {
+          case "SUCCEEDED" -> {
+            // idem perfeito: devolve o resultado
+            log.info("Idem key hit, returning previous result. requestId={}", requestId);
+            return Optional.of(objectMapper.convertValue(existing.getResponseBody(), OrderDTO.class));
+          }
+          case "IN_PROGRESS" -> {
+            // sua política: esperar? rejeitar?
+            // aqui eu rejeitaria com 409 Conflict
+            log.info("Idem key in progress, rejecting new request. requestId={}", requestId);
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Pedido com mesma chave está em processamento. Tente novamente."
+            // opcional: header Retry-After via ControllerAdvice
+            );
+          }
+          case "FAILED" -> {
+            // sua política: permitir novo processamento?
+            // aqui eu devolveria 409 também
+            log.info("Idem key marked as FAILED, rejecting new request. requestId={}", requestId);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tentativa anterior falhou.");
+          }
+        }
+      }
+    } catch (NoSuchAlgorithmException e) {
+      log.error("Erro inesperado no processOrder, marcando idem como FAILED. requestId={}", requestId, e);
+      throw new UncheckedIOException(new IOException(e));
+    }
+    return Optional.empty();
+  }
+
   // ====== RECOVERs (um por exceção concorrencial) ======
 
   @Recover
@@ -215,13 +219,6 @@ public class OrderTransactionalOrchestrator {
   }
 
   @Recover
-  public Order recover(DeadlockLoserDataAccessException ex, UUID productId, int quantity) {
-    log.error("Deadlock after retries. Executing compensation... productId={}, qty={}", productId, quantity, ex);
-    saveCompensatingOutbox(productId, quantity, "DeadlockLoserDataAccessException", ex.getMessage());
-    throw new ConcurrencyConflictException("Não foi possível processar o pedido (deadlock).");
-  }
-
-  @Recover
   public Order recover(PessimisticLockingFailureException ex, UUID productId, int quantity) {
     log.error("Pessimistic lock failure after retries. Executing compensation... productId={}, qty={}", productId,
         quantity, ex);
@@ -229,13 +226,4 @@ public class OrderTransactionalOrchestrator {
     throw new ConcurrencyConflictException("Não foi possível processar o pedido (pessimistic lock failure).");
   }
 
-  /**
-   * Exceção de domínio para o ControllerAdvice traduzir p/ HTTP 409 (Conflict) ou
-   * 503 (Retry-After).
-   */
-  public static class ConcurrencyConflictException extends RuntimeException {
-    public ConcurrencyConflictException(String message) {
-      super(message);
-    }
-  }
 }
