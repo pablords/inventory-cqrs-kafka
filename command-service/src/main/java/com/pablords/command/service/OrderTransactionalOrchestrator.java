@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pablords.command.dto.request.CreateOrderDTO;
 import com.pablords.command.dto.request.OrderItemCreateDTO;
 import com.pablords.command.dto.response.OrderDTO;
+import com.pablords.command.dto.response.OrderItemDTO;
 import com.pablords.command.model.Order;
 import com.pablords.command.model.OrderItem;
 import com.pablords.command.model.Outbox;
@@ -76,7 +77,7 @@ public class OrderTransactionalOrchestrator {
   }, maxAttempts = 3, backoff = @Backoff(delay = 300, maxDelay = 2000, multiplier = 2.0), exclude = {
       UnsupportedOperationException.class })
   @Transactional
-  public Order processOrder(CreateOrderDTO request, String requestId) {
+  public OrderDTO processOrder(CreateOrderDTO request, String requestId) {
     try {
       String hash = Util.sha256(Util.canonicalJson(request));
 
@@ -86,14 +87,20 @@ public class OrderTransactionalOrchestrator {
         // já existe → decide pela situação
         var existing = idemRepo.findById(UUID.fromString(requestId)).orElseThrow();
         if (!existing.getRequestHash().equals(hash)) {
+          log.warn("Idem key reuse with different payload! requestId={}", requestId);
           throw new ResponseStatusException(HttpStatus.CONFLICT,
               "Idempotency-Key já usada com payload diferente");
         }
         switch (existing.getStatus()) {
           case "SUCCEEDED" -> {
-            return objectMapper.convertValue(existing.getResponseBody(), Order.class);
+            // idem perfeito: devolve o resultado
+            log.info("Idem key hit, returning previous result. requestId={}", requestId);
+            return objectMapper.convertValue(existing.getResponseBody(), OrderDTO.class);
           }
           case "IN_PROGRESS" -> {
+            // sua política: esperar? rejeitar?
+            // aqui eu rejeitaria com 409 Conflict
+            log.info("Idem key in progress, rejecting new request. requestId={}", requestId);
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Pedido com mesma chave está em processamento. Tente novamente."
             // opcional: header Retry-After via ControllerAdvice
@@ -102,6 +109,7 @@ public class OrderTransactionalOrchestrator {
           case "FAILED" -> {
             // sua política: permitir novo processamento?
             // aqui eu devolveria 409 também
+            log.info("Idem key marked as FAILED, rejecting new request. requestId={}", requestId);
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Tentativa anterior falhou.");
           }
         }
@@ -129,13 +137,22 @@ public class OrderTransactionalOrchestrator {
     var ok = idemRepo.findById(UUID.fromString(requestId)).orElseThrow();
     ok.setStatus("SUCCEEDED");
 
+    var responseItems = order.getItems().stream()
+        .map(i -> new OrderItemDTO(
+            i.getId(),
+            i.getProduct().getId(),
+            i.getQuantity()))
+        .toList();
+
     Map<String, Object> responseBody = objectMapper.convertValue(
-        request,
+        new OrderDTO(order.getId(), responseItems, order.getStatus()),
         new TypeReference<Map<String, Object>>() {
         });
     ok.setResponseBody(responseBody);
     log.info("Order created {}", order.getId());
-    return order;
+
+    var dto = new OrderDTO(order.getId(), responseItems, order.getStatus());
+    return dto;
   }
 
   /**
